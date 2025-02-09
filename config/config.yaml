@@ -1,0 +1,15 @@
+# Project info
+user: WangRuiyu
+project: NanoCT
+metadata: config/metadata.csv
+
+# Pipeline info
+cores: 32
+RefGenome: "/mnt/WKD0Q2WQ/INDEX/bowtie2Index/mm10/mm10_bowtie2_index"
+ChromSize: "/mnt/ZA1BT1ER/RESOURCES/ucsc/genome/Mouse/UCSC_mm10/mm10.chrom.sizes"
+picard: "/home/luolab/picard.jar"
+minQualityScore: 2
+
+# Software
+envs:
+  conda: epigenomics

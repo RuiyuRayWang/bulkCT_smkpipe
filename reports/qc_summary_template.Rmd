@@ -1,0 +1,26 @@
+---
+title: "QC Summary Report for bulk C&T"
+author: "Ruiyu Wang, Haiyue Zou, Minmin Luo"
+date: "`r Sys.time()`"
+output: html_document
+params:
+  qc_metrics: NULL
+---
+
+## QC Summary Report
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+qc_metrics <- params$qc_metrics
+suppressPackageStartupMessages(library(DT))
+```
+
+```{r QC summary}
+datatable(
+  qc_metrics,
+  filter = "top",
+  options = list(pageLength = 10,
+                 autoWidth = TRUE,
+                 scrollX = TRUE)
+)
+```

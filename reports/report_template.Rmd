@@ -1,0 +1,299 @@
+---
+title: "`r params$title`"
+author: "Ruiyu Wang, Haiyue Zou, Minmin Luo"
+date: "`r Sys.time()`"
+output: html_document
+params:
+  title: "QC Report template for CUT&Tag"
+  assay: NULL
+  experiment: NULL
+  library: NULL
+  sample: NULL
+---
+
+## 1 Setup the Analysis
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r load_libraries}
+suppressPackageStartupMessages({
+  library(dplyr)
+  library(stringr)
+  library(ggplot2)
+  library(viridis)
+  library(GenomicRanges)
+  library(chromVAR) ## For FRiP analysis and differential analysis
+  library(DESeq2) ## For differential analysis section
+  library(ggpubr) ## For customizing figures
+  library(corrplot) ## For correlation plot
+  library(jsonlite) ## For exporting JSON file
+})
+```
+
+```{r load_metadata}
+metadata <- read.csv("../config/metadata.csv")
+```
+
+## 2 Data Pre-processing
+
+### 2.1 FastQC
+
+```{r fastqc, echo=FALSE}
+# TODO: Load FastQC summary
+```
+
+## 3 Alignment
+
+### 3.1 Bowtie2 Alignment summary
+
+```{r bowtie2, echo=FALSE}
+# Load Bowtie2 alignment summary
+bowtie2_summary <- read.csv(
+  paste0("../data/", params$assay, "_", params$experiment,
+         "/", params$library, "/", params$sample,
+         "/alignment/sam/bowtie2_summary/", params$sample, "_bowtie2.txt"),
+  header = FALSE
+)
+
+# Display Bowtie2 alignment summary
+bowtie2_summary
+```
+
+### 3.2 Sequencing mapping summary
+
+#### 3.2.1 Sequencing Depth
+
+```{r sequencing_depth, echo=FALSE}
+proj_path <- paste0("../data/", params$assay, "_", params$experiment, "/",
+                    params$library, "/", params$sample)
+# sample_list <- list.files(proj_path)
+hist_levels <- c("H3K27ac", "H3K27me3", "ATAC")
+
+## Collect the alignment results from the bowtie2 alignment summary files
+align_result <- c()
+
+align_res <- read.table(
+  paste0(proj_path, "/alignment/sam/bowtie2_summary/",
+         params$sample, "_bowtie2.txt"),
+  header = FALSE, fill = TRUE
+)
+align_rate <- substr(align_res$V1[6], 1,
+                     nchar(as.character(align_res$V1[6])) - 1)
+hist_info <- metadata |> filter(SampleName == params$sample) |> pull(Modality)
+align_result <- data.frame(
+  Sample = params$sample,
+  Histone = hist_info,
+  SequencingDepth = align_res$V1[1] |>
+    as.character() |>
+    as.numeric(),
+  MappedFragNum_mm10 = align_res$V1[4] |>
+    as.character() |>
+    as.numeric() + align_res$V1[5] |>
+    as.character() |>
+    as.numeric(),
+  AlignmentRate_mm10 = align_rate |>
+    as.numeric()
+) |>
+  rbind(align_result)
+
+align_result$Histone |> factor(align_result$Histone, levels = hist_levels)
+align_result |> mutate(AlignmentRate_mm10 = paste0(AlignmentRate_mm10, "%"))
+```
+
+### 3.3 Remove duplicates
+
+According to Ye et al., the apparent duplication rate is low for high quality CUT&Tag datasets, and even the apparent ‘duplicate’ fragments are likely to be true fragments. Thus, it is not recommend to remove the duplicates. In experiments with very small amounts of material or where PCR duplication is suspected, duplicates may be removed.
+
+#### 3.3.1 Duplication Level
+
+```{r duplicates, echo=FALSE}
+dup_result <- c()
+
+dup_res <- read.table(
+  paste0(proj_path, "/alignment/removeDuplicate/picard_summary/",
+         params$sample, "_picard.rmDup.txt"),
+  header = TRUE, fill = TRUE
+)
+hist_info <- metadata |> filter(SampleName == params$sample) |> pull(Modality)
+dup_result <- data.frame(
+  Sample = params$sample,
+  Histone = hist_info,
+  MappedFragNum_mm10 = dup_res$READ_PAIRS_EXAMINED[1] |>
+    as.character() |>
+    as.numeric(),
+  DuplicationRate = dup_res$PERCENT_DUPLICATION[1] |>
+    as.character() |>
+    as.numeric() * 100,
+  EstimatedLibrarySize = dup_res$ESTIMATED_LIBRARY_SIZE[1] |>
+    as.character() |>
+    as.numeric()
+) |>
+  mutate(UniqueFragNum = MappedFragNum_mm10 * (1 - DuplicationRate / 100)) |>
+  rbind(dup_result)
+
+align_dup_summary <- left_join(
+  align_result, dup_result,
+  by = c("Sample", "Histone", "MappedFragNum_mm10")
+) |>
+  mutate(DuplicationRate = paste0(DuplicationRate, "%"))
+align_dup_summary
+```
+
+### 3.4 Assess Fragment Size Distribution
+
+```{r fragment_size, echo=FALSE, fig.width=10, fig.height=5}
+frag_len <- c()
+
+hist_info <- metadata |> filter(SampleName == params$sample) |> pull(Modality)
+frag_len <- read.table(
+  paste0(proj_path, "/alignment/sam/fragmentLen/", params$sample,
+         "_fragmentLen.txt"),
+  header = FALSE
+) |>
+  mutate(frag_len = V1 |> as.numeric(),
+         fragCount = V2 |> as.numeric(),
+         Weight = as.numeric(V2) / sum(as.numeric(V2)),
+         Histone = hist_info, sampleInfo = params$sample) |>
+  rbind(frag_len)
+
+frag_len$sampleInfo <- factor(frag_len$sampleInfo)
+frag_len$Histone <- factor(frag_len$Histone, levels = hist_levels)
+
+## Generate the fragment size density plot (violin plot)
+f1 <- frag_len |>
+  ggplot(aes(x = sampleInfo, y = frag_len, weight = Weight, fill = Histone)) +
+  geom_violin(bw = 5) +
+  scale_y_continuous(breaks = seq(0, 800, 50)) +
+  scale_fill_viridis(discrete = TRUE, begin = 0.1, end = 0.9,
+                     option = "magma", alpha = 0.8) +
+  scale_color_viridis(discrete = TRUE, begin = 0.1, end = 0.9) +
+  theme_bw(base_size = 15) +
+  theme(legend.position = "bottom") +
+  ggpubr::rotate_x_text(angle = 20) +
+  ylab("Fragment Length") +
+  xlab("")
+
+f2 <- frag_len |>
+  ggplot(aes(x = frag_len, y = fragCount,
+             color = Histone, group = sampleInfo)) +
+  geom_line(size = 1) +
+  scale_color_viridis(discrete = TRUE, begin = 0.1, end = 0.9,
+                      option = "magma") +
+  theme_bw(base_size = 15) +
+  theme(legend.position = "bottom") +
+  xlab("Fragment Length") +
+  ylab("Count") +
+  coord_cartesian(xlim = c(0, 500))
+
+ggarrange(f1, f2, ncol = 2)
+```
+
+### 3.5 Replicate Reproducibility
+
+```{r replicate_reproducibility, echo=FALSE}
+# TODO
+```
+
+## 4 Peak Calling
+
+### 4.1 Number of Peaks Called
+
+```{r peak_number, echo=FALSE}
+peak_n <- c()
+peak_width <- c()
+peak_type <- c("top0.01")
+
+hist_info <- metadata |> filter(SampleName == params$sample) |> pull(Modality)
+for (type in peak_type){
+  peak_info <- read.table(
+    paste0(proj_path, "/peakCalling/SEACR/", params$sample, "_seacr_",
+           type, ".peaks.stringent.bed"),
+    header = FALSE, fill = TRUE
+  ) |>
+    mutate(width = abs(V3 - V2))
+  peak_n <- data.frame(Sample = params$sample,
+                       peakN = nrow(peak_info),
+                       peakType = type,
+                       Histone = hist_info) |>
+    rbind(peak_n)
+  peak_width <- data.frame(Sample = params$sample,
+                           Width = peak_info$width,
+                           PeakType = type,
+                           Histone = peak_info) |>
+    rbind(peak_width)
+}
+
+peak_n |> select(Histone, peakType, peakN)
+```
+
+### 4.2 Reproducibility of peaks across biological replicates
+
+```{r peak_reproducibility, echo=FALSE}
+# TODO
+```
+
+### 4.3 FRagment proportion in Peaks regions (FRiPs)
+
+```{r frip, echo=FALSE}
+in_peak_data <- c()
+
+hist_info <- metadata |> filter(SampleName == params$sample) |> pull(Modality)
+peak_res <- read.table(
+  paste0(proj_path, "/peakCalling/SEACR/", params$sample,
+         "_seacr_top0.01.peaks.stringent.bed"),
+  header = FALSE, fill = TRUE
+)
+peak_gr <- GRanges(
+  seqnames = peak_res$V1,
+  IRanges(start = peak_res$V2,
+          end = peak_res$V3),
+  strand = "*"
+)
+bam_file <- paste0(proj_path, "/alignment/bam/", params$sample,
+                   "_bowtie2.mapped.bam")
+fragment_counts <- getCounts(
+  bam_file, peak_gr, paired = TRUE,
+  by_rg = FALSE, format = "bam"
+)
+in_peak_n <- counts(fragment_counts)[, 1] |> sum()
+in_peak_data <- rbind(
+  in_peak_data,
+  data.frame(inPeakN = in_peak_n, Sample = params$sample, Histone = hist_info)
+)
+
+
+frip <- left_join(in_peak_data, align_result, by = c("Sample", "Histone")) |>
+  mutate(frip = inPeakN / MappedFragNum_mm10 * 100)
+frip |>
+  select(Sample, Histone, SequencingDepth, MappedFragNum_mm10,
+         AlignmentRate_mm10, FragInPeakNum = inPeakN, FRiPs = frip)
+```
+
+## 5 Collect QC Metrics
+
+```{r collect_qc_metrics, echo=FALSE}
+# Collect QC metrics
+qc_metrics <- list(
+  experiment_name = params$experiment,
+  library_name = params$library,
+  sample_name = params$sample,
+  hist_info = align_result$Histone,
+  sequencing_depth = align_result$SequencingDepth,
+  mapped_fragments = align_result$MappedFragNum_mm10,
+  alignment_rate = align_result$AlignmentRate_mm10,
+  duplication_rate = align_dup_summary$DuplicationRate,
+  unique_fragments = align_dup_summary$UniqueFragNum,
+  peak_number = peak_n$peakN,
+  frip = frip$frip
+)
+
+# Define the output path
+output_path <- paste0("../data/", params$assay, "_", params$experiment, "/",
+                      params$library, "/", params$sample, "/report/",
+                      params$sample, "_qc_metrics.json")
+
+# Write QC metrics to JSON file
+write_json(qc_metrics, output_path, pretty = TRUE)
+```
