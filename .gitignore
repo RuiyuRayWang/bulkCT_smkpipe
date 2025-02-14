@@ -1,4 +1,4 @@
-config/metadata.csv
+config/*.csv
 reports/qc_summary_report.html
 .snakemake/*
 *.fq.gz

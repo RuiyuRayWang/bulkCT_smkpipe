@@ -2,17 +2,21 @@ import csv
 import pandas as pd
 import os
 
-def get_final_output():
-    final_outputs = list(
+def get_seacr_output():
+    seacr_outputs = list(
         set(
-            expand("data/{assay}_{experiment}/{library}/{sample}/peakCalling/SEACR/{sample}_seacr_top0.01.peaks.stringent.bed", 
+            expand("data/{assay}_{experiment}/{library}/{sample}/peakCalling/SEACR/{sample}_seacr_top{seacr_cutoff}.peaks.stringent.bed", 
             zip, 
             assay=metadata.Assay.to_list(),
             experiment=metadata.ExperimentName.to_list(),
             library=metadata.LibraryName.to_list(),
-            sample=metadata.SampleName.to_list())
+            sample=metadata.SampleName.to_list(),
+            seacr_cutoff=metadata.SeacrCutoff.to_list())
         )
     )
+    return seacr_outputs
+
+def get_final_output():
     qc_fastqc_outputs = list(
         expand("data/{assay}_{experiment}/{library}/{sample}/fastqc/{sample}_R1_fastqc.html", 
                zip,
@@ -51,7 +55,7 @@ def get_final_output():
                library=metadata.LibraryName.to_list(),
                sample=metadata.SampleName.to_list())
     )
-    return final_outputs + qc_fastqc_outputs + qc_report_outputs + bigwig_outputs
+    return qc_fastqc_outputs + qc_report_outputs + bigwig_outputs
 
 def create_symlink(target, link_name):
     if not os.path.exists(link_name):
@@ -64,7 +68,7 @@ metadata = (
     pd.read_csv(
         config["metadata"], 
         dtype={'ExperimentName': str, 'LibraryName': str, 'SampleName': str, 'SeqRun': str, 
-               'Read1': str, 'Read2': str, 'OutputDir': str})
+               'Read1': str, 'Read2': str, 'OutputDir': str, 'SeacrCutoff': str})
         .set_index("ExperimentName", drop=False)
         .sort_index()
 )

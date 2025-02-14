@@ -9,6 +9,7 @@ params:
   experiment: NULL
   library: NULL
   sample: NULL
+  seacr_cutoff: NULL
 ---
 
 ## 1 Setup the Analysis
@@ -203,29 +204,27 @@ ggarrange(f1, f2, ncol = 2)
 ```{r peak_number, echo=FALSE}
 peak_n <- c()
 peak_width <- c()
-peak_type <- c("top0.01")
 
 hist_info <- metadata |> filter(SampleName == params$sample) |> pull(Modality)
-for (type in peak_type){
-  peak_info <- read.table(
-    paste0(proj_path, "/peakCalling/SEACR/", params$sample, "_seacr_",
-           type, ".peaks.stringent.bed"),
-    header = FALSE, fill = TRUE
-  ) |>
-    mutate(width = abs(V3 - V2))
-  peak_n <- data.frame(Sample = params$sample,
-                       peakN = nrow(peak_info),
-                       peakType = type,
-                       Histone = hist_info) |>
-    rbind(peak_n)
-  peak_width <- data.frame(Sample = params$sample,
-                           Width = peak_info$width,
-                           PeakType = type,
-                           Histone = peak_info) |>
-    rbind(peak_width)
-}
 
-peak_n |> select(Histone, peakType, peakN)
+peak_info <- read.table(
+  paste0(proj_path, "/peakCalling/SEACR/", params$sample, "_seacr_top",
+         params$seacr_cutoff, ".peaks.stringent.bed"),
+  header = FALSE, fill = TRUE
+) |>
+  mutate(width = abs(V3 - V2))
+peak_n <- data.frame(Sample = params$sample,
+                     PeakN = nrow(peak_info),
+                     PeakType = paste0("top",params$seacr_cutoff),
+                     Histone = hist_info) |>
+  rbind(peak_n)
+peak_width <- data.frame(Width = peak_info$width,
+                         PeakType = paste0("top",params$seacr_cutoff),
+                         Histone = hist_info) |>
+  rbind(peak_width)
+
+
+peak_n
 ```
 
 ### 4.2 Reproducibility of peaks across biological replicates
@@ -237,38 +236,15 @@ peak_n |> select(Histone, peakType, peakN)
 ### 4.3 FRagment proportion in Peaks regions (FRiPs)
 
 ```{r frip, echo=FALSE}
-in_peak_data <- c()
+# Read FRiP score from file
+frip_file <- paste0(proj_path, "/peakCalling/deeptools/", params$sample, "_frip.txt")
+frip_score <- read.table(frip_file, header = FALSE, fill = TRUE)$V2
 
-hist_info <- metadata |> filter(SampleName == params$sample) |> pull(Modality)
-peak_res <- read.table(
-  paste0(proj_path, "/peakCalling/SEACR/", params$sample,
-         "_seacr_top0.01.peaks.stringent.bed"),
-  header = FALSE, fill = TRUE
-)
-peak_gr <- GRanges(
-  seqnames = peak_res$V1,
-  IRanges(start = peak_res$V2,
-          end = peak_res$V3),
-  strand = "*"
-)
-bam_file <- paste0(proj_path, "/alignment/bam/", params$sample,
-                   "_bowtie2.mapped.bam")
-fragment_counts <- getCounts(
-  bam_file, peak_gr, paired = TRUE,
-  by_rg = FALSE, format = "bam"
-)
-in_peak_n <- counts(fragment_counts)[, 1] |> sum()
-in_peak_data <- rbind(
-  in_peak_data,
-  data.frame(inPeakN = in_peak_n, Sample = params$sample, Histone = hist_info)
-)
+# Append FRiP score to align_result
+align_result <- align_result %>%
+  mutate(FRiP = frip_score)
 
-
-frip <- left_join(in_peak_data, align_result, by = c("Sample", "Histone")) |>
-  mutate(frip = inPeakN / MappedFragNum_mm10 * 100)
-frip |>
-  select(Sample, Histone, SequencingDepth, MappedFragNum_mm10,
-         AlignmentRate_mm10, FragInPeakNum = inPeakN, FRiPs = frip)
+align_result
 ```
 
 ## 5 Collect QC Metrics
@@ -286,7 +262,8 @@ qc_metrics <- list(
   duplication_rate = align_dup_summary$DuplicationRate,
   unique_fragments = align_dup_summary$UniqueFragNum,
   peak_number = peak_n$peakN,
-  frip = frip$frip
+  peak_type = paste0("top", params$seacr_cutoff),
+  frip = align_result$FRiP
 )
 
 # Define the output path

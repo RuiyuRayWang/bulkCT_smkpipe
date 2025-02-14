@@ -6,6 +6,7 @@ assay <- args[1]
 experiment <- args[2]
 library <- args[3]
 sample <- args[4]
+seacr_cutoff <- args[5]
 
 # Define the parameters
 params <- list(
@@ -13,7 +14,8 @@ params <- list(
   assay = assay,
   experiment = experiment,
   library = library,
-  sample = sample
+  sample = sample,
+  seacr_cutoff = seacr_cutoff
 )
 
 # Specify the output directory

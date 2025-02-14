@@ -7,4 +7,5 @@ rule all:
     input:
         # Final outputs
         get_final_output(),
+        # get_seacr_output(),
         "reports/qc_summary_report.html"

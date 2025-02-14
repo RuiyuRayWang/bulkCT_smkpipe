@@ -48,4 +48,51 @@ dependencies:
   - wheel=0.44.0=py38h06a4308_0
   - xz=5.4.6=h5eee18b_1
   - zlib=1.2.13=h5eee18b_1
+  - pip:
+      - alabaster==0.7.13
+      - babel==2.17.0
+      - certifi==2025.1.31
+      - charset-normalizer==3.4.1
+      - contourpy==1.1.1
+      - cycler==0.12.1
+      - deeptools==3.5.5
+      - deeptoolsintervals==0.1.9
+      - docutils==0.20.1
+      - fonttools==4.56.0
+      - idna==3.10
+      - imagesize==1.4.1
+      - importlib-metadata==8.5.0
+      - importlib-resources==6.4.5
+      - jinja2==3.1.5
+      - kiwisolver==1.4.7
+      - markupsafe==2.1.5
+      - matplotlib==3.7.5
+      - narwhals==1.26.0
+      - numpy==1.24.4
+      - numpydoc==1.7.0
+      - packaging==24.2
+      - pillow==10.4.0
+      - plotly==6.0.0
+      - py2bit==0.3.3
+      - pybigwig==0.3.22
+      - pygments==2.19.1
+      - pyparsing==3.1.4
+      - pysam==0.23.0
+      - python-dateutil==2.9.0.post0
+      - pytz==2025.1
+      - requests==2.32.3
+      - scipy==1.10.1
+      - six==1.17.0
+      - snowballstemmer==2.2.0
+      - sphinx==7.1.2
+      - sphinxcontrib-applehelp==1.0.4
+      - sphinxcontrib-devhelp==1.0.2
+      - sphinxcontrib-htmlhelp==2.0.1
+      - sphinxcontrib-jsmath==1.0.1
+      - sphinxcontrib-qthelp==1.0.3
+      - sphinxcontrib-serializinghtml==1.1.5
+      - tabulate==0.9.0
+      - tomli==2.2.1
+      - urllib3==2.2.3
+      - zipp==3.20.2
 prefix: /home/luolab/miniforge3/envs/epigenomics
