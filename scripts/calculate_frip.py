@@ -15,7 +15,7 @@ def calculate_frip(bam_file, bed_file, output_file, cores):
     frip = total / bam.mapped
     
     with open(output_file, "w") as f:
-        f.write(f"FRiP score: {frip}\n")
+        f.write(f"FRiP score: {frip[0]}\n")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Calculate FRiP score")

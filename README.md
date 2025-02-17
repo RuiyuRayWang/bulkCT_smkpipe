@@ -39,15 +39,22 @@ luolab@luolab-X11DAi-N:~/GITHUB_REPOS/bulkCT_smkpipe$ conda activate snakemake
 ├── results
 |
 ├── rules
-│   ├── common.smk
-│   └── pipeline.smk
-|
+│   ├── common.smkSimplified
 ├── scripts
 │   ├── gather_qc_metrics.R
 │   └── render_report.R
 |
 └── Snakefile
 ```
+
+## Rulegraph
+
+The following command generates a rulegraph of the pipeline for intuitive visualizations:
+```
+snakemake --rulegraph | grep -v "Symlink" | dot -Tpng -o rulegraph.png
+```
+
+
 
 ## TODO
 

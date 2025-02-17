@@ -2,60 +2,80 @@ import csv
 import pandas as pd
 import os
 
-def get_seacr_output():
-    seacr_outputs = list(
-        set(
-            expand("data/{assay}_{experiment}/{library}/{sample}/peakCalling/SEACR/{sample}_seacr_top{seacr_cutoff}.peaks.stringent.bed", 
-            zip, 
+def get_fastqc_output():
+    qc_fastqc_outputs = list(
+        expand(
+            "data/{assay}_{experiment}/{library}/{sample}/fastqc/{sample}_R1_fastqc.html", 
+            zip,
             assay=metadata.Assay.to_list(),
             experiment=metadata.ExperimentName.to_list(),
             library=metadata.LibraryName.to_list(),
             sample=metadata.SampleName.to_list(),
-            seacr_cutoff=metadata.SeacrCutoff.to_list())
-        )
+            seacr_cutoff=metadata.SeacrCutoff.to_list()
+            )
+    ) + list(
+        expand(
+            "data/{assay}_{experiment}/{library}/{sample}/fastqc/{sample}_R2_fastqc.html", 
+            zip,
+            assay=metadata.Assay.to_list(),
+            experiment=metadata.ExperimentName.to_list(),
+            library=metadata.LibraryName.to_list(),
+            sample=metadata.SampleName.to_list(),
+            seacr_cutoff=metadata.SeacrCutoff.to_list()
+            )
+    )
+    return qc_fastqc_outputs
+
+def get_report_output():
+    qc_report_outputs = list(
+        expand(
+            "data/{assay}_{experiment}/{library}/{sample}/report/{sample}_top{seacr_cutoff}_qc_report.html", 
+            zip,
+            assay=metadata.Assay.to_list(),
+            experiment=metadata.ExperimentName.to_list(),
+            library=metadata.LibraryName.to_list(),
+            sample=metadata.SampleName.to_list(),
+            seacr_cutoff=metadata.SeacrCutoff.to_list()
+            )
+    ) + list(
+        expand(
+            "data/{assay}_{experiment}/{library}/{sample}/report/{sample}_top{seacr_cutoff}_qc_metrics.json", 
+            zip,
+            assay=metadata.Assay.to_list(),
+            experiment=metadata.ExperimentName.to_list(),
+            library=metadata.LibraryName.to_list(),
+            sample=metadata.SampleName.to_list(),
+            seacr_cutoff=metadata.SeacrCutoff.to_list()
+            )
+    )
+    return qc_report_outputs
+
+def get_bigwig_output():
+    bigwig_outputs = list(
+        expand(
+            "data/{assay}_{experiment}/{library}/{sample}/alignment/bigwig/{sample}_bowtie2.bw",
+            zip,
+            assay=metadata.Assay.to_list(),
+            experiment=metadata.ExperimentName.to_list(),
+            library=metadata.LibraryName.to_list(),
+            sample=metadata.SampleName.to_list(),
+            seacr_cutoff=metadata.SeacrCutoff.to_list()
+            )
+    )
+    return bigwig_outputs
+
+def get_seacr_output():
+    seacr_outputs = list(
+        expand("data/{assay}_{experiment}/{library}/{sample}/peakCalling/peakCalling/deeptools/{sample}_top{seacr_cutoff}_frip.txt", 
+               zip,
+               assay=metadata.Assay.to_list(),
+               experiment=metadata.ExperimentName.to_list(),
+               library=metadata.LibraryName.to_list(),
+               sample=metadata.SampleName.to_list(),
+               seacr_cutoff=metadata.SeacrCutoff.to_list()
+               )
     )
     return seacr_outputs
-
-def get_final_output():
-    qc_fastqc_outputs = list(
-        expand("data/{assay}_{experiment}/{library}/{sample}/fastqc/{sample}_R1_fastqc.html", 
-               zip,
-               assay=metadata.Assay.to_list(),
-               experiment=metadata.ExperimentName.to_list(),
-               library=metadata.LibraryName.to_list(),
-               sample=metadata.SampleName.to_list())
-    ) + list(
-        expand("data/{assay}_{experiment}/{library}/{sample}/fastqc/{sample}_R2_fastqc.html", 
-               zip, 
-               assay=metadata.Assay.to_list(),
-               experiment=metadata.ExperimentName.to_list(),
-               library=metadata.LibraryName.to_list(),
-               sample=metadata.SampleName.to_list())
-    )
-    qc_report_outputs = list(
-        expand("data/{assay}_{experiment}/{library}/{sample}/report/{sample}_qc_report.html", 
-               zip,
-               assay=metadata.Assay.to_list(),
-               experiment=metadata.ExperimentName.to_list(),
-               library=metadata.LibraryName.to_list(),
-               sample=metadata.SampleName.to_list())
-    ) + list(
-        expand("data/{assay}_{experiment}/{library}/{sample}/report/{sample}_qc_metrics.json", 
-               zip, 
-               assay=metadata.Assay.to_list(),
-               experiment=metadata.ExperimentName.to_list(),
-               library=metadata.LibraryName.to_list(),
-               sample=metadata.SampleName.to_list())
-    )
-    bigwig_outputs = list(
-        expand("data/{assay}_{experiment}/{library}/{sample}/alignment/bigwig/{sample}_bowtie2.bw",
-               zip,
-               assay=metadata.Assay.to_list(),
-               experiment=metadata.ExperimentName.to_list(),
-               library=metadata.LibraryName.to_list(),
-               sample=metadata.SampleName.to_list())
-    )
-    return qc_fastqc_outputs + qc_report_outputs + bigwig_outputs
 
 def create_symlink(target, link_name):
     if not os.path.exists(link_name):
@@ -64,10 +84,16 @@ def create_symlink(target, link_name):
     else:
         print(f"Symlink already exists: {link_name}")
 
+# ## Debug
+# from snakemake.io import expand
+# import yaml
+# with open ('config/config.yaml') as f:
+#     config = yaml.safe_load(f)
+
 metadata = (
     pd.read_csv(
         config["metadata"], 
-        dtype={'ExperimentName': str, 'LibraryName': str, 'SampleName': str, 'SeqRun': str, 
+        dtype={'ExperimentName': str, 'LibraryName': str, 'SampleName': str, 'SeqRun': str,  'Assay': str,
                'Read1': str, 'Read2': str, 'OutputDir': str, 'SeacrCutoff': str})
         .set_index("ExperimentName", drop=False)
         .sort_index()

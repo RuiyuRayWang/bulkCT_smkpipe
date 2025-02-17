@@ -215,11 +215,11 @@ peak_info <- read.table(
   mutate(width = abs(V3 - V2))
 peak_n <- data.frame(Sample = params$sample,
                      PeakN = nrow(peak_info),
-                     PeakType = paste0("top",params$seacr_cutoff),
+                     PeakType = paste0("top", params$seacr_cutoff),
                      Histone = hist_info) |>
   rbind(peak_n)
 peak_width <- data.frame(Width = peak_info$width,
-                         PeakType = paste0("top",params$seacr_cutoff),
+                         PeakType = paste0("top", params$seacr_cutoff),
                          Histone = hist_info) |>
   rbind(peak_width)
 
@@ -237,8 +237,11 @@ peak_n
 
 ```{r frip, echo=FALSE}
 # Read FRiP score from file
-frip_file <- paste0(proj_path, "/peakCalling/deeptools/", params$sample, "_frip.txt")
-frip_score <- read.table(frip_file, header = FALSE, fill = TRUE)$V2
+frip_file <- paste0(
+  proj_path, "/peakCalling/deeptools/",
+  params$sample, "_top",params$seacr_cutoff, "_frip.txt"
+)
+frip_score <- read.table(frip_file, header = FALSE, fill = TRUE)$V3 * 100
 
 # Append FRiP score to align_result
 align_result <- align_result %>%
@@ -261,15 +264,17 @@ qc_metrics <- list(
   alignment_rate = align_result$AlignmentRate_mm10,
   duplication_rate = align_dup_summary$DuplicationRate,
   unique_fragments = align_dup_summary$UniqueFragNum,
-  peak_number = peak_n$peakN,
-  peak_type = paste0("top", params$seacr_cutoff),
+  peak_number = peak_n$PeakN,
+  peak_type = peak_n$PeakType,
   frip = align_result$FRiP
 )
 
 # Define the output path
-output_path <- paste0("../data/", params$assay, "_", params$experiment, "/",
-                      params$library, "/", params$sample, "/report/",
-                      params$sample, "_qc_metrics.json")
+output_path <- paste0(
+  "../data/", params$assay, "_", params$experiment, "/",
+  params$library, "/", params$sample, "/report/",
+  params$sample, "_top", params$seacr_cutoff, "_qc_metrics.json"
+)
 
 # Write QC metrics to JSON file
 write_json(qc_metrics, output_path, pretty = TRUE)

@@ -28,7 +28,9 @@ output_dir <- paste0("../data/", assay, "_", experiment,
 # Render the RMarkdown file
 render(
   input = "reports/report_template.Rmd",
-  output_file = paste0(output_dir, "/", sample, "_", "qc_report.html"),
+  output_file = paste0(
+    output_dir, "/", sample, "_top", seacr_cutoff, "_qc_report.html"
+  ),
   params = params,
   envir = new.env(parent = globalenv())
 )

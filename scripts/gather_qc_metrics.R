@@ -3,12 +3,15 @@ library(jsonlite)
 library(dplyr)
 library(ggplot2)
 
-# Define the path to the JSON files
-json_files <- list.files(path = "data", pattern = "*_qc_metrics.json",
-                         recursive = TRUE, full.names = TRUE)
+# Get command line arguments
+args <- commandArgs(trailingOnly = TRUE)
+json_files <- args
 
 # Read and combine all JSON files into a single data frame
-qc_metrics_list <- lapply(json_files, fromJSON)
+qc_metrics_list <- lapply(json_files, function(x) {
+  data <- fromJSON(x)
+  as.data.frame(data)
+})
 qc_metrics_df <- bind_rows(qc_metrics_list)
 
 # Define the output directory

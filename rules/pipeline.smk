@@ -112,7 +112,7 @@ rule fragment_size_distribution:
         sort | uniq -c | awk -v OFS="\\t" '{{print $2, $1/2}}' > {output}
         """
 
-rule filter_mapped_reads:
+rule filter_quality_reads:
     input:
         "data/{assay}_{experiment}/{library}/{sample}/alignment/sam/{sample}_bowtie2.sam"
     output:
@@ -148,7 +148,7 @@ rule sam_to_bam:
         samtools index {output.sorted_bam} -@ {params.cores}
         """
 
-rule file_format_conversion:
+rule bam_to_bed:
     input:
         "data/{assay}_{experiment}/{library}/{sample}/alignment/bam/{sample}_bowtie2.mapped.bam"
     output:
@@ -203,37 +203,27 @@ rule peak_calling:
     input:
         bedgraph="data/{assay}_{experiment}/{library}/{sample}/alignment/bedgraph/{sample}_bowtie2.fragments.bedgraph"
     output:
-        peaks_final="data/{assay}_{experiment}/{library}/{sample}/peakCalling/SEACR/{sample}_seacr_top{params.seacr_cutoff}.peaks.stringent.bed"
+        peaks_final="data/{assay}_{experiment}/{library}/{sample}/peakCalling/SEACR/{sample}_seacr_top{seacr_cutoff}.peaks.stringent.bed"
     params:
         seacr="/home/luolab/GITHUB_REPOS/SEACR/SEACR_1.3.sh",
-        out_prefix="data/{assay}_{experiment}/{library}/{sample}/peakCalling/SEACR/{sample}_seacr_top{params.seacr_cutoff}.peaks",
-        seacr_cutoff=lambda wildcards: metadata.loc[(metadata['Assay'] == wildcards.assay) & 
-                                                    (metadata['ExperimentName'] == wildcards.experiment) & 
-                                                    (metadata['LibraryName'] == wildcards.library) & 
-                                                    (metadata['SampleName'] == wildcards.sample), 
-                                                    'SeacrCutoff'].values[0]
+        out_prefix="data/{assay}_{experiment}/{library}/{sample}/peakCalling/SEACR/{sample}_seacr_top{seacr_cutoff}.peaks",
     conda:
         "epigenomics"
     shell:
         """
         mkdir -p data/{wildcards.assay}_{wildcards.experiment}/{wildcards.library}/{wildcards.sample}/peakCalling/SEACR
-        bash {params.seacr} {input.bedgraph} {params.seacr_cutoff} non stringent {params.out_prefix}
+        bash {params.seacr} {input.bedgraph} {wildcards.seacr_cutoff} non stringent {params.out_prefix}
         """
 
 rule calculate_frip:
     input:
         bam="data/{assay}_{experiment}/{library}/{sample}/alignment/bam/{sample}_bowtie2.mapped.sorted.bam",
         idx="data/{assay}_{experiment}/{library}/{sample}/alignment/bam/{sample}_bowtie2.mapped.sorted.bam.bai",
-        peaks="data/{assay}_{experiment}/{library}/{sample}/peakCalling/SEACR/{sample}_seacr_top{params.seacr_cutoff}.peaks.stringent.bed"
+        peaks="data/{assay}_{experiment}/{library}/{sample}/peakCalling/SEACR/{sample}_seacr_top{seacr_cutoff}.peaks.stringent.bed"
     output:
-        frip="data/{assay}_{experiment}/{library}/{sample}/peakCalling/deeptools/{sample}_frip.txt"
+        "data/{assay}_{experiment}/{library}/{sample}/peakCalling/deeptools/{sample}_top{seacr_cutoff}_frip.txt"
     params:
-        cores=config["cores"],
-        seacr_cutoff=lambda wildcards: metadata.loc[(metadata['Assay'] == wildcards.assay) & 
-                                                    (metadata['ExperimentName'] == wildcards.experiment) & 
-                                                    (metadata['LibraryName'] == wildcards.library) & 
-                                                    (metadata['SampleName'] == wildcards.sample), 
-                                                    'SeacrCutoff'].values[0]
+        cores=config["cores"]
     conda:
         "epigenomics"
     threads:
@@ -241,7 +231,7 @@ rule calculate_frip:
     shell:
         """
         mkdir -p data/{wildcards.assay}_{wildcards.experiment}/{wildcards.library}/{wildcards.sample}/peakCalling/deeptools
-        python scripts/calculate_frip.py --bam {input.bam} --peaks {input.peaks} --output {output.frip} --cores {params.cores}
+        python scripts/calculate_frip.py --bam {input.bam} --peaks {input.peaks} --output {output} --cores {params.cores}
         """
 
 rule generate_qc_report:
@@ -249,45 +239,43 @@ rule generate_qc_report:
         "data/{assay}_{experiment}/{library}/{sample}/alignment/bam/{sample}_bowtie2.mapped.sorted.bam",
         "data/{assay}_{experiment}/{library}/{sample}/alignment/removeDuplicate/picard_summary/{sample}_picard.rmDup.txt",
         "data/{assay}_{experiment}/{library}/{sample}/alignment/sam/fragmentLen/{sample}_fragmentLen.txt",
-        "data/{assay}_{experiment}/{library}/{sample}/peakCalling/deeptools/{sample}_frip.txt"
+        "data/{assay}_{experiment}/{library}/{sample}/peakCalling/deeptools/{sample}_top{seacr_cutoff}_frip.txt"
     output:
-        html="data/{assay}_{experiment}/{library}/{sample}/report/{sample}_qc_report.html",
-        json="data/{assay}_{experiment}/{library}/{sample}/report/{sample}_qc_metrics.json"
+        html="data/{assay}_{experiment}/{library}/{sample}/report/{sample}_top{seacr_cutoff}_qc_report.html",
+        json="data/{assay}_{experiment}/{library}/{sample}/report/{sample}_top{seacr_cutoff}_qc_metrics.json"
     params:
         assay="{assay}",
         experiment="{experiment}",
         library="{library}",
-        sample="{sample}",
-        seacr_cutoff=lambda wildcards: metadata.loc[(metadata['Assay'] == wildcards.assay) & 
-                                                    (metadata['ExperimentName'] == wildcards.experiment) & 
-                                                    (metadata['LibraryName'] == wildcards.library) & 
-                                                    (metadata['SampleName'] == wildcards.sample), 
-                                                    'SeacrCutoff'].values[0]
+        sample="{sample}"
     conda:
         "epigenomics"
     shell:
         """
         echo "Creating directory: data/{wildcards.assay}_{wildcards.experiment}/{wildcards.library}/{wildcards.sample}/report"
         mkdir -p data/{wildcards.assay}_{wildcards.experiment}/{wildcards.library}/{wildcards.sample}/report
-        echo "Running R script with parameters: {wildcards.assay} {wildcards.experiment} {wildcards.library} {wildcards.sample} {params.seacr_cutoff}"
-        Rscript scripts/render_report.R {wildcards.assay} {wildcards.experiment} {wildcards.library} {wildcards.sample} {params.seacr_cutoff}
+        echo "Running R script with parameters: {wildcards.assay} {wildcards.experiment} {wildcards.library} {wildcards.sample} {wildcards.seacr_cutoff}"
+        Rscript scripts/render_report.R {wildcards.assay} {wildcards.experiment} {wildcards.library} {wildcards.sample} {wildcards.seacr_cutoff}
         """
 
 rule gather_qc_metrics:
     input:
-        expand("data/{assay}_{experiment}/{library}/{sample}/report/{sample}_qc_metrics.json", 
-               zip,
-               assay=metadata.Assay.to_list(),
-               experiment=metadata.ExperimentName.to_list(),
-               library=metadata.LibraryName.to_list(),
-               sample=metadata.SampleName.to_list())
+        expand(
+            "data/{assay}_{experiment}/{library}/{sample}/report/{sample}_top{seacr_cutoff}_qc_metrics.json",
+            zip,
+            assay=metadata.Assay.to_list(),
+            experiment=metadata.ExperimentName.to_list(),
+            library=metadata.LibraryName.to_list(),
+            sample=metadata.SampleName.to_list(),
+            seacr_cutoff=metadata.SeacrCutoff.to_list()
+            )
     output:
         "reports/qc_summary_report.html"
     conda:
         "epigenomics"
     shell:
         """
-        Rscript scripts/gather_qc_metrics.R
+        Rscript scripts/gather_qc_metrics.R {input}
         """
 
 
