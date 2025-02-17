@@ -54,7 +54,9 @@ The following command generates a rulegraph of the pipeline for intuitive visual
 snakemake --rulegraph | grep -v "Symlink" | dot -Tpng -o rulegraph.png
 ```
 
-
+<p align="center">
+  <img width="300"  src="https://github.com/RuiyuRayWang/bulkCT_smkpipe/blob/master/rulegraph.png">
+</p>
 
 ## TODO
 
