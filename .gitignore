@@ -5,6 +5,7 @@ reports/qc_summary_report.html
 !data/
 data/*
 misc/*
+results/*
 
 
 # Byte-compiled / optimized / DLL files
