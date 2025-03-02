@@ -1,3 +1,22 @@
+rule adapter_trimming:
+    input:
+        "data/{assay}_{experiment}/{library}/{sample}/fastq/{sample}_R1.fq.gz",
+        "data/{assay}_{experiment}/{library}/{sample}/fastq/{sample}_R2.fq.gz"
+    output:
+        "data/{assay}_{experiment}/{library}/{sample}/fastq/{sample}_R1.trimmed.fq.gz",
+        "data/{assay}_{experiment}/{library}/{sample}/fastq/{sample}_R2.trimmed.fq.gz"
+    conda:
+        "epigenomics"
+    threads:
+        32
+    shell:
+        """
+        cutadapt -j 32 -m 50:50 \
+        -a CTGTCTCTTATACACATCTCCGAGCCCACGAGACNNNNNNNNATCTCGTATGCCGTCTTCTGCTTG \
+        -A CTGTCTCTTATACACATCTGACGCTGCCGACGANNNNNNNNGTGTAGATCTCGGTGGTCGCCGTATCATT \
+        -o {output[0]} -p {output[1]} {input[0]} {input[1]}
+        """
+
 rule qc_fastqc:
     input:
         "data/{assay}_{experiment}/{library}/{sample}/fastq/{sample}_R1.fq.gz",
@@ -16,8 +35,8 @@ rule qc_fastqc:
 
 rule bowtie2_alignment:
     input:
-        r1="data/{assay}_{experiment}/{library}/{sample}/fastq/{sample}_R1.fq.gz",
-        r2="data/{assay}_{experiment}/{library}/{sample}/fastq/{sample}_R2.fq.gz"
+        r1="data/{assay}_{experiment}/{library}/{sample}/fastq/{sample}_R1.trimmed.fq.gz",
+        r2="data/{assay}_{experiment}/{library}/{sample}/fastq/{sample}_R2.trimmed.fq.gz"
     output:
         sam=protected("data/{assay}_{experiment}/{library}/{sample}/alignment/sam/{sample}_bowtie2.sam"),
         summary="data/{assay}_{experiment}/{library}/{sample}/alignment/sam/bowtie2_summary/{sample}_bowtie2.txt"

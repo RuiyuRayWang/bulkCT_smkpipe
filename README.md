@@ -65,5 +65,6 @@ snakemake --rulegraph | grep -v "Symlink" | dot -Tpng -o rulegraph.png
 
 ## TODO
 
-- Add `dirs.py` in utils for creating directories.
-- Write folder ftructure
+- [ ] Add `dirs.py` in utils for creating directories.
+- [x] Write folder ftructure
+- [] Refactor code to include adapter trimming.
