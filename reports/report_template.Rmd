@@ -25,8 +25,8 @@ suppressPackageStartupMessages({
   library(ggplot2)
   library(viridis)
   library(GenomicRanges)
-  library(chromVAR) ## For FRiP analysis and differential analysis
-  library(DESeq2) ## For differential analysis section
+  # library(chromVAR) ## For FRiP analysis and differential analysis
+  # library(DESeq2) ## For differential analysis section
   library(ggpubr) ## For customizing figures
   library(corrplot) ## For correlation plot
   library(jsonlite) ## For exporting JSON file
@@ -248,6 +248,12 @@ align_result <- align_result %>%
   mutate(FRiP = frip_score)
 
 align_result
+```
+
+### 4.4 TSS enrichment score
+
+```{r tss_enrichment, echo=FALSE}
+# TODO
 ```
 
 ## 5 Collect QC Metrics

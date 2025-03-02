@@ -4,11 +4,16 @@ This repository hosts a Snakemake pipeline designed for efficient and reproducib
 
 ## Running the pipeline
 
+Fill in `config/metadata.csv`.
+
+Run the pipeline:
 ```
 luolab@luolab-X11DAi-N:~/GITHUB_REPOS/bulkCT_smkpipe$ conda activate snakemake
 (snakemake) luolab@luolab-X11DAi-N:~/GITHUB_REPOS/bulkCT_smkpipe$ snakemake --use-conda --cores 72 --dry-run
 (snakemake) luolab@luolab-X11DAi-N:~/GITHUB_REPOS/bulkCT_smkpipe$ snakemake --use-conda --cores 72
 ```
+
+Goto D1D2_ENHANCER project directory for further downstream analysis (i.e. peak analysis).
 
 ## Folder Structure
 

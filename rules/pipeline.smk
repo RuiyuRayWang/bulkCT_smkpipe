@@ -145,7 +145,7 @@ rule sam_to_bam:
         """
         samtools view -bS -F 0x04 {input} -@ {params.cores} -o {output.bam}
         samtools sort {output.bam} -@ {params.cores} -o {output.sorted_bam}
-        samtools index {output.sorted_bam} -@ {params.cores}
+        samtools index {output.sorted_bam}
         """
 
 rule bam_to_bed:
