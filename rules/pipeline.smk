@@ -38,7 +38,7 @@ rule bowtie2_alignment:
         r1="data/{assay}_{experiment}/{library}/{sample}/fastq/{sample}_R1.trimmed.fq.gz",
         r2="data/{assay}_{experiment}/{library}/{sample}/fastq/{sample}_R2.trimmed.fq.gz"
     output:
-        sam=protected("data/{assay}_{experiment}/{library}/{sample}/alignment/sam/{sample}_bowtie2.sam"),
+        sam="data/{assay}_{experiment}/{library}/{sample}/alignment/sam/{sample}_bowtie2.sam",
         summary="data/{assay}_{experiment}/{library}/{sample}/alignment/sam/bowtie2_summary/{sample}_bowtie2.txt"
     params:
         cores=config["cores"],
@@ -151,7 +151,7 @@ rule sam_to_bam:
     input:
         "data/{assay}_{experiment}/{library}/{sample}/alignment/sam/{sample}_bowtie2.qualityScore2.sam"
     output:
-        bam=protected("data/{assay}_{experiment}/{library}/{sample}/alignment/bam/{sample}_bowtie2.mapped.bam"),
+        bam="data/{assay}_{experiment}/{library}/{sample}/alignment/bam/{sample}_bowtie2.mapped.bam",
         idx="data/{assay}_{experiment}/{library}/{sample}/alignment/bam/{sample}_bowtie2.mapped.sorted.bam.bai",
         sorted_bam="data/{assay}_{experiment}/{library}/{sample}/alignment/bam/{sample}_bowtie2.mapped.sorted.bam"
     params:

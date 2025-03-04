@@ -4,9 +4,9 @@ This repository hosts a Snakemake pipeline designed for efficient and reproducib
 
 ## Running the pipeline
 
-Fill in `config/metadata.csv`.
+### Step 1: Fill in `config/metadata.csv`.
 
-Run the pipeline:
+### Step 2: Open terminal and execute the following commands:
 ```
 luolab@luolab-X11DAi-N:~/GITHUB_REPOS/bulkCT_smkpipe$ conda activate snakemake
 (snakemake) luolab@luolab-X11DAi-N:~/GITHUB_REPOS/bulkCT_smkpipe$ snakemake --use-conda --cores 72 --dry-run
@@ -67,4 +67,4 @@ snakemake --rulegraph | grep -v "Symlink" | dot -Tpng -o rulegraph.png
 
 - [ ] Add `dirs.py` in utils for creating directories.
 - [x] Write folder ftructure
-- [] Refactor code to include adapter trimming.
+- [ ] Refactor code to include adapter trimming.
