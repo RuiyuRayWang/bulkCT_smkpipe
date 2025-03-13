@@ -6,14 +6,21 @@ This pipeline is based on [CUT&Tag Data Processing and Analysis Tutorial](https:
 
 ## Requirements
 
-This pipeline is developed with snakemake version `8.27.1`.
-Install the corresponding `snakemake` package into a conda environment. 
+This pipeline is developed with snakemake version `8.27.1`. Two conda environments are required: `snakemake` and `epigenomics`.
 
-Additionally, a dedicated environment `epigenomics` is required.
+Install `snakemake` into a dedicated conda environment. 
+```
+conda create -n snakemake python=3.12.8
+conda env update -n snakemake --file envs/snakemake.yaml
+```
 
-Check `envs/snakemake.yaml` and `envs/epigenomics.yaml` for package specifications.
+Additionally, a second conda environment `epigenomics` is required.
+```
+conda create -n epigenomics python=3.8.13
+conda env update -n epigenomics --file envs/epigenomics/yaml
+```
 
-Other required packages:
+The following required packages need to be installed by root:
 ```
 pandoc  # v2.5
 bowtie2  # v2.3.5.1, 64-bit
@@ -35,7 +42,6 @@ install.packages("languageserver")  # for R extension in VSCode
 if (!require("BiocManager", quietly = TRUE))
   install.packages("BiocManager")
 BiocManager::install("DESeq2")
-
 ```
 
 ## Running the pipeline
