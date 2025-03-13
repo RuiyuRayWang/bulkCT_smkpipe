@@ -4,6 +4,40 @@ This repository hosts a Snakemake pipeline designed for efficient and reproducib
 
 This pipeline is based on [CUT&Tag Data Processing and Analysis Tutorial](https://yezhengstat.github.io/CUTTag_tutorial/) with slightly modified workflows.
 
+## Requirements
+
+This pipeline is developed with snakemake version `8.27.1`.
+Install the corresponding `snakemake` package into a conda environment. 
+
+Additionally, a dedicated environment `epigenomics` is required.
+
+Check `envs/snakemake.yaml` and `envs/epigenomics.yaml` for package specifications.
+
+Other required packages:
+```
+pandoc  # v2.5
+bowtie2  # v2.3.5.1, 64-bit
+picard  # picard.jar
+samtools  # v1.3.1
+bedtools  # v2.27.1
+R  # v4.4.3 (2025-02-28)
+```
+
+R packages:
+```
+install.packages("tidyverse")
+install.packages("rmarkdown")
+install.packages("viridis")
+install.packages("ggpubr")
+install.packages("jsonlite")
+install.packages("DT")
+install.packages("languageserver")  # for R extension in VSCode
+if (!require("BiocManager", quietly = TRUE))
+  install.packages("BiocManager")
+BiocManager::install("DESeq2")
+
+```
+
 ## Running the pipeline
 
 ### Step 1: Fill in `config/metadata.csv`.
