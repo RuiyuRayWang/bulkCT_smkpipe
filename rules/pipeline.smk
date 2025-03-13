@@ -137,6 +137,7 @@ rule filter_quality_reads:
     output:
         temp("data/{assay}_{experiment}/{library}/{sample}/alignment/sam/{sample}_bowtie2.qualityScore2.sam")
     params:
+        minQscore=config["minQualityScore"],
         cores=config["cores"]
     conda:
         "epigenomics"
@@ -144,10 +145,11 @@ rule filter_quality_reads:
         32
     shell:
         """
-        samtools view -h -q 2 {input} > {output} -@ {params.cores}
+        samtools view -h -q {params.minQscore} {input} > {output} -@ {params.cores}
         """
 
 rule sam_to_bam:
+    ## Filter and keep the mapped read pairs
     input:
         "data/{assay}_{experiment}/{library}/{sample}/alignment/sam/{sample}_bowtie2.qualityScore2.sam"
     output:
@@ -168,34 +170,61 @@ rule sam_to_bam:
         """
 
 rule bam_to_bed:
+    ## Convert into bed file format
     input:
         "data/{assay}_{experiment}/{library}/{sample}/alignment/bam/{sample}_bowtie2.mapped.bam"
     output:
-        bed="data/{assay}_{experiment}/{library}/{sample}/alignment/bed/{sample}_bowtie2.bed",
-        clean_bed="data/{assay}_{experiment}/{library}/{sample}/alignment/bed/{sample}_bowtie2.clean.bed",
-        fragments_bed="data/{assay}_{experiment}/{library}/{sample}/alignment/bed/{sample}_bowtie2.fragments.bed"
-    params:
-        cores=config["cores"]
+        bed="data/{assay}_{experiment}/{library}/{sample}/alignment/bed/{sample}_bowtie2.bed.gz"
     conda:
         "epigenomics"
     threads:
-        32
+        1
     shell:
         """
-        bedtools bamtobed -i {input} -bedpe > {output.bed}
-        awk '$1==$4 && $6-$2 < 1000 {{print $0}}' {output.bed} > {output.clean_bed}
-        cut -f 1,2,6 {output.clean_bed} | sort -k1,1 -k2,2n -k3,3n > {output.fragments_bed}
+        bedtools bamtobed -i {input} -bedpe | gzip > {output}
+        """
+
+rule bed_to_clean_bed:
+    ## Keep the read pairs that are on the same chromosome and fragment length less than 1000bp.
+    input:
+        "data/{assay}_{experiment}/{library}/{sample}/alignment/bed/{sample}_bowtie2.bed.gz"
+    output:
+        "data/{assay}_{experiment}/{library}/{sample}/alignment/bed/{sample}_bowtie2.clean.bed.gz"
+    conda:
+        "epigenomics"
+    threads:
+        1
+    shell:
+        """
+        zcat {input} | awk '$1==$4 && $6-$2 < 1000 {{print $0}}' - | gzip > {output}
+        """
+
+rule clean_bed_to_fragment_bed:
+    ## Only extract the fragment related columns
+    input:
+        "data/{assay}_{experiment}/{library}/{sample}/alignment/bed/{sample}_bowtie2.clean.bed.gz"
+    output:
+        "data/{assay}_{experiment}/{library}/{sample}/alignment/bed/{sample}_bowtie2.fragments.bed.gz"
+    conda:
+        "epigenomics"
+    threads:
+        1
+    shell:
+        """
+        zcat {input} | cut -f 1,2,6 - | sort -k1,1 -k2,2n -k3,3n | gzip > {output}
         """
 
 rule make_bedgraph:
     input:
-        "data/{assay}_{experiment}/{library}/{sample}/alignment/bed/{sample}_bowtie2.fragments.bed"
+        "data/{assay}_{experiment}/{library}/{sample}/alignment/bed/{sample}_bowtie2.fragments.bed.gz"
     output:
         "data/{assay}_{experiment}/{library}/{sample}/alignment/bedgraph/{sample}_bowtie2.fragments.bedgraph"
     params:
         chromSize=config["ChromSize"]
     conda:
         "epigenomics"
+    threads:
+        1
     shell:
         """
         mkdir -p data/{wildcards.assay}_{wildcards.experiment}/{wildcards.library}/{wildcards.sample}/alignment/bedgraph
@@ -212,6 +241,8 @@ rule bedgraph_to_bigwig:
         bgtobw="/mnt/WKD0P26R/UCSC_tools/bedGraphToBigWig"
     conda:
         "epigenomics"
+    threads:
+        1
     shell:
         """
         mkdir -p data/{wildcards.assay}_{wildcards.experiment}/{wildcards.library}/{wildcards.sample}/alignment/bigwig
@@ -228,6 +259,8 @@ rule peak_calling:
         out_prefix="data/{assay}_{experiment}/{library}/{sample}/peakCalling/SEACR/{sample}_seacr_top{seacr_cutoff}.peaks",
     conda:
         "epigenomics"
+    threads:
+        1
     shell:
         """
         mkdir -p data/{wildcards.assay}_{wildcards.experiment}/{wildcards.library}/{wildcards.sample}/peakCalling/SEACR

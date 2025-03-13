@@ -1,6 +1,8 @@
 # bulkCT_smkpipe
 
-This repository hosts a Snakemake pipeline designed for efficient and reproducible batch processing of bulk CUT&Tag data, developed with the assistance of the Copilot AI engine.
+This repository hosts a Snakemake pipeline designed for efficient and reproducible batch processing of bulk CUT&Tag data.
+
+This pipeline is based on [CUT&Tag Data Processing and Analysis Tutorial](https://yezhengstat.github.io/CUTTag_tutorial/) with slightly modified workflows.
 
 ## Running the pipeline
 
@@ -65,6 +67,8 @@ snakemake --rulegraph | grep -v "Symlink" | dot -Tpng -o rulegraph.png
 
 ## TODO
 
-- [ ] Add `dirs.py` in utils for creating directories.
+- [ ] Update README to include package installation guide.
 - [x] Write folder ftructure
-- [ ] Refactor code to include adapter trimming.
+- [x] Refactor code to include adapter trimming.
+- [ ] Migrate to HPC.
+- [ ] Add `dirs.py` in utils for creating directories.
