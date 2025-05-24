@@ -135,8 +135,10 @@ for _, row in metadata.iterrows():
             os.makedirs(fastq_path, exist_ok=True)
             print(f"Created fastq dir, symlink to rawdata: {fastq_path}")
 
-        create_symlink(read1_path, os.path.join(fastq_path, os.path.basename(read1_path)))
-        create_symlink(read2_path, os.path.join(fastq_path, os.path.basename(read2_path)))
+        # create_symlink(read1_path, os.path.join(fastq_path, os.path.basename(read1_path)))
+        # create_symlink(read2_path, os.path.join(fastq_path, os.path.basename(read2_path)))
+        create_symlink(read1_path, os.path.join(fastq_path, sample_name+'_R1.fq.gz'))
+        create_symlink(read2_path, os.path.join(fastq_path, sample_name+'_R2.fq.gz'))
 
         # Create modality-experiment directory in data folder
         experiment_dir = os.path.join('data', assay+'_'+experiment_name)
