@@ -30,11 +30,14 @@ suppressPackageStartupMessages({
   library(ggpubr) ## For customizing figures
   library(corrplot) ## For correlation plot
   library(jsonlite) ## For exporting JSON file
+  library(yaml)
 })
 ```
 
 ```{r load_metadata}
-metadata <- read.csv("../config/metadata.csv")
+config <- yaml.load_file(../config/config.yaml)
+metadata_path <- config$metadata
+metadata <- read.csv(metadata_path)
 ```
 
 ## 2 Data Pre-processing

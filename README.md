@@ -107,8 +107,8 @@ snakemake --rulegraph | grep -v "Symlink" | dot -Tpng -o rulegraph.png
 
 ## TODO
 
-- [ ] Update README to include package installation guide.
+- [X] Update README to include package installation guide.
 - [x] Write folder ftructure
 - [x] Refactor code to include adapter trimming.
-- [ ] Migrate to HPC.
+- [X] Migrate to HPC.
 - [ ] Add `dirs.py` in utils for creating directories.

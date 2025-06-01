@@ -238,7 +238,7 @@ rule bedgraph_to_bigwig:
         "data/{assay}_{experiment}/{library}/{sample}/alignment/bigwig/{sample}_bowtie2.bw"
     params:
         chromSize=config["ChromSize"],
-        bgtobw="/mnt/WKD0P26R/UCSC_tools/bedGraphToBigWig"
+        bgtobw=config["bedGraphToBigWig"]
     conda:
         "epigenomics"
     threads:
@@ -255,8 +255,8 @@ rule peak_calling:
     output:
         peaks_final="data/{assay}_{experiment}/{library}/{sample}/peakCalling/SEACR/{sample}_seacr_top{seacr_cutoff}.peaks.stringent.bed"
     params:
-        seacr="/home/luolab/GITHUB_REPOS/SEACR/SEACR_1.3.sh",
-        out_prefix="data/{assay}_{experiment}/{library}/{sample}/peakCalling/SEACR/{sample}_seacr_top{seacr_cutoff}.peaks",
+        seacr=config["seacr"],
+        out_prefix="data/{assay}_{experiment}/{library}/{sample}/peakCalling/SEACR/{sample}_seacr_top{seacr_cutoff}.peaks"
     conda:
         "epigenomics"
     threads:

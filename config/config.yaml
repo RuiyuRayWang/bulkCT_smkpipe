@@ -8,6 +8,8 @@ cores: 32
 RefGenome: "/mnt/WKD0Q2WQ/INDEX/bowtie2Index/mm10/mm10_bowtie2_index"
 ChromSize: "/mnt/ZA1BT1ER/RESOURCES/ucsc/genome/Mouse/UCSC_mm10/mm10.chrom.sizes"
 picard: "/home/luolab/picard.jar"
+seacr: "/home/luolab/GITHUB_REPOS/SEACR/SEACR_1.3.sh"
+bedGraphToBigWig: "/mnt/WKD0P26R/UCSC_tools/bedGraphToBigWig"
 minQualityScore: 2
 
 # Software
